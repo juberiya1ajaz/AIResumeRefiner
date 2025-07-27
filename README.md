@@ -34,7 +34,7 @@ Analyze, improve, and tailor your resume to job descriptions using keyword match
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/AIResumeRefineri.git
+git clone https://github.com/your-username/AIResumeRefiner.git
 cd AIResumeRefiner
 ```
 
