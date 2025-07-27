@@ -1,7 +1,8 @@
 streamlit
-requests
 PyPDF2
 python-docx
-reportlab
 spacy
 nltk
+reportlab
+requests
+python-dotenv
