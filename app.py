@@ -202,7 +202,7 @@ if st.session_state.resume_data:
     final_resume = ""
     for section, content in st.session_state.current_sections.items():
         final_resume += f"=== {section} ===\n{content.strip()}\n\n"
-        final_resume += f"{section}\n{'-' * len(section)}\n{content.strip()}\n\n"
+        # final_resume += f"{section}\n{'-' * len(section)}\n{content.strip()}\n\n"
 
     # Export final resume in DOCX and PDF
     docx_bytes = export_to_docx(final_resume)
