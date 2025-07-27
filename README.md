@@ -34,8 +34,8 @@ Analyze, improve, and tailor your resume to job descriptions using keyword match
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/resume-craft-ai.git
-cd resume-craft-ai
+git clone https://github.com/your-username/AIResumeRefineri.git
+cd AIResumeRefiner
 ```
 
 ### 2. Install Dependencies
@@ -72,14 +72,10 @@ streamlit run app.py
 ## 📂 Project Structure
 
 ```
-resume-craft-ai/
+AIResumeRefiner/
 │
 ├── app.py                # Streamlit main app
-├── modules/
-│   ├── extract.py        # Resume/job description parsing
-│   ├── llm.py            # Calls to LLM (Perplexity)
-│   ├── export.py         # Export to PDF/DOCX
-│   └── utils.py          # Helper utilities
+├── backend.py            # backend functions
 │
 ├── requirements.txt
 └── README.md
@@ -100,11 +96,8 @@ You’ll need a valid API key. Free-tier keys may have request limits.
 ---
 
 ## ✅ To-Do / Enhancements
-
-- [ ] TXT file support
 - [ ] Save/load user sessions
 - [ ] Highlight changes in optimized resume
-- [ ] Environment variable config for API keys
 
 ---
 
