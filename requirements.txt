@@ -1,0 +1,7 @@
+streamlit
+requests
+PyPDF2
+python-docx
+reportlab
+spacy
+nltk
