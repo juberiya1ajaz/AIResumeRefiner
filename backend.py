@@ -19,8 +19,9 @@ import streamlit as st
 
 
 # Download necessary NLTK corpora
-nltk.download('punkt_tab')
-nltk.download('stopwords')
+
+# nltk.download('punkt_tab')
+# nltk.download('stopwords')
 
 # Set your Perplexity API key here
 
