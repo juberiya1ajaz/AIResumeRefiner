@@ -24,16 +24,20 @@ import nltk.data
 def get_nlp():
     return spacy.load("en_core_web_sm")
 
-# @st.cache_resource
-# def download_nltk():
-#     nltk.download("punkt")
-#     nltk.download("stopwords")
-
-
-# Path to local nltk_data
 nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
+os.makedirs(nltk_data_path, exist_ok=True)
 nltk.data.path.append(nltk_data_path)
+
+# Download correct 'punkt' and 'stopwords'
+nltk.download("punkt", download_dir=nltk_data_path)
+nltk.download("stopwords", download_dir=nltk_data_path)
+import os
+
+punkt_path = os.path.join(nltk_data_path, "tokenizers/punkt/english.pickle")
+print("Exists:", os.path.exists(punkt_path))  # Should be True
+
 tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
+
     
 
 # Call once early in app
