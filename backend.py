@@ -11,9 +11,11 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import simpleSplit
 from io import BytesIO
-import os
-from dotenv import load_dotenv
-load_dotenv()
+import re
+# import os
+import streamlit as st
+# from dotenv import load_dotenv
+# load_dotenv()
 
 
 # Download necessary NLTK corpora
@@ -22,10 +24,11 @@ nltk.download('stopwords')
 
 # Set your Perplexity API key here
 
-PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
-if not PERPLEXITY_API_KEY:
-    raise ValueError("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
+# PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+# if not PERPLEXITY_API_KEY:
+#     raise ValueError("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
 
+PERPLEXITY_API_KEY = st.secrets["PERPLEXITY_API_KEY"]
 
 # Load spaCy's English language model
 nlp = spacy.load("en_core_web_sm")
@@ -83,8 +86,6 @@ def ats_keyword_check(resume_text, job_desc):
 # FILE EXPORTING FUNCTIONS
 # -----------------------------------------------
 
-
-import re
 
 def export_to_docx(text):
     """Exports given text into a DOCX file, preserving basic formatting like **bold**."""
