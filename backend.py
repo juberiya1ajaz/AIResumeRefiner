@@ -14,6 +14,7 @@ from io import BytesIO
 import re
 import os
 import streamlit as st
+import nltk.data
 # from dotenv import load_dotenv
 # load_dotenv()
 
@@ -31,17 +32,13 @@ def get_nlp():
 
 # Tell nltk to look in the local 'nltk_data' directory
 # Absolute path to the local nltk_data folder
-current_dir = os.path.dirname(os.path.abspath(__file__))
-nltk_data_path = os.path.join(current_dir, "nltk_data")
+# Set custom download path
+nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
 nltk.data.path.append(nltk_data_path)
 
-# Force download of punkt into custom path
-def setup_nltk_data():
-    import nltk
-    nltk.download("punkt", download_dir=nltk_data_path)
-    nltk.download("stopwords", download_dir=nltk_data_path)
-
-setup_nltk_data()
+# Re-download clean version of punkt
+nltk.download("punkt", download_dir=nltk_data_path)
+nltk.download("stopwords", download_dir=nltk_data_path)
 
 
 # Call once early in app
@@ -90,7 +87,13 @@ def extract_keywords(text, top_n=10):
     Tokenize and return top N frequent keywords from given text.
     Filters out stopwords and non-alphabetic tokens.
     """
-    words = nltk.word_tokenize(text)
+    # Make sure nltk uses your local folder
+    nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
+    nltk.data.path.append(nltk_data_path)
+
+    # Manually load tokenizer to avoid mysterious punkt_tab
+    tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
+    words = tokenizer.tokenize(text)
     words = [w.lower() for w in words if w.isalpha() and w.lower() not in stop_words]
     freq_dist = nltk.FreqDist(words)
     return [word for word, freq in freq_dist.most_common(top_n)]
