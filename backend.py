@@ -1,73 +1,50 @@
 # Imports for file handling, NLP, PDF/Word processing, API requests, and temporary file creation
+import os
+import re
 import requests
+import nltk
 import PyPDF2
 import docx
 import spacy
-import nltk
-import re
+import streamlit as st
+
+from io import BytesIO
 from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize, word_tokenize
 from docx import Document
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import simpleSplit
-from io import BytesIO
-import re
-import os
-import streamlit as st
-import nltk.data
-# from dotenv import load_dotenv
-# load_dotenv()
 
-
-# Download necessary NLTK corpora
-@st.cache_resource
-def get_nlp():
-    return spacy.load("en_core_web_sm")
+# ---------------------------
+# NLTK & SpaCy Setup
+# ---------------------------
 
 nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
 os.makedirs(nltk_data_path, exist_ok=True)
 nltk.data.path.append(nltk_data_path)
 
-# Download correct 'punkt' and 'stopwords'
 nltk.download("punkt", download_dir=nltk_data_path)
 nltk.download("stopwords", download_dir=nltk_data_path)
-import os
 
-punkt_path = os.path.join(nltk_data_path, "tokenizers/punkt/english.pickle")
-print("Exists:", os.path.exists(punkt_path))  # Should be True
+@st.cache_resource
+def get_nlp():
+    return spacy.load("en_core_web_sm")
 
-tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
-
-    
-
-# Call once early in app
 nlp = get_nlp()
+stop_words = set(stopwords.words("english"))
 
-# nltk.download('punkt_tab')
-# nltk.download('stopwords')
-
-# Set your Perplexity API key here
-
-# PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
-# if not PERPLEXITY_API_KEY:
-#     raise ValueError("Perplexity API key not found. Please set the PERPLEXITY_API_KEY environment variable.")
+# ---------------------------
+# PERPLEXITY API Key
+# ---------------------------
 
 PERPLEXITY_API_KEY = st.secrets["PERPLEXITY_API_KEY"]
 
-# Load spaCy's English language model
-nlp = spacy.load("en_core_web_sm")
-
-# Define stopwords set for keyword filtering
-stop_words = set(stopwords.words('english'))
-
-# -----------------------------------------------
+# ---------------------------
 # TEXT EXTRACTION FUNCTIONS
-# -----------------------------------------------
+# ---------------------------
 
 def extract_text(resume_file):
-    """
-    Extract text from a resume file (PDF or DOCX).
-    """
     if resume_file.name.endswith(".pdf"):
         reader = PyPDF2.PdfReader(resume_file)
         return "".join([page.extract_text() for page in reader.pages])
@@ -77,24 +54,17 @@ def extract_text(resume_file):
     else:
         return "Unsupported file type."
 
-# -----------------------------------------------
-# KEYWORD & SKILL MATCHING (ATS)
-# -----------------------------------------------
+# ---------------------------
+# KEYWORD & SKILL MATCHING
+# ---------------------------
 
 def extract_keywords(text, top_n=10):
-    """
-    Tokenize and return top N frequent keywords from given text.
-    Filters out stopwords and non-alphabetic tokens.
-    """
-    words = tokenizer.tokenize(text)
-    words = [w.lower() for w in words if w.isalpha() and w.lower() not in stop_words]
+    tokens = word_tokenize(text)
+    words = [w.lower() for w in tokens if w.isalpha() and w.lower() not in stop_words]
     freq_dist = nltk.FreqDist(words)
     return [word for word, freq in freq_dist.most_common(top_n)]
 
 def ats_keyword_check(resume_text, job_desc):
-    """
-    Compare resume and job description to identify keyword overlap for ATS scoring.
-    """
     resume_keywords = set(extract_keywords(resume_text, 50))
     jd_keywords = set(extract_keywords(job_desc, 50))
     matching = resume_keywords & jd_keywords
@@ -106,17 +76,14 @@ def ats_keyword_check(resume_text, job_desc):
         "coverage_percent": round(coverage * 100, 2)
     }
 
-# -----------------------------------------------
-# FILE EXPORTING FUNCTIONS
-# -----------------------------------------------
-
+# ---------------------------
+# FILE EXPORTING
+# ---------------------------
 
 def export_to_docx(text):
-    """Exports given text into a DOCX file, preserving basic formatting like **bold**."""
     buffer = BytesIO()
     doc = Document()
-
-    bold_pattern = re.compile(r'\*\*(.*?)\*\*')  # Matches **bold**
+    bold_pattern = re.compile(r'\*\*(.*?)\*\*')
 
     for line in text.split('\n'):
         para = doc.add_paragraph()
@@ -125,7 +92,6 @@ def export_to_docx(text):
             run.bold = True
             continue
 
-        # If line contains **bold** segments, parse them
         pos = 0
         for match in bold_pattern.finditer(line):
             start, end = match.span()
@@ -136,39 +102,28 @@ def export_to_docx(text):
             pos = end
         if pos < len(line):
             para.add_run(line[pos:])
-
     doc.save(buffer)
     buffer.seek(0)
     return buffer
 
-
 def export_to_pdf(text):
-    """Exports resume text to a formatted PDF file, with basic bold handling."""
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
     x_margin = 40
-    max_width = width - 2 * x_margin
     y = height - 40
     font_size = 11
-
     normal_font = "Helvetica"
     bold_font = "Helvetica-Bold"
-
     line_spacing = 10
-    section_spacing = 15
 
     def draw_wrapped_line(parts):
         nonlocal y
         x = x_margin
-
         for part, is_bold in parts:
             font = bold_font if is_bold else normal_font
             c.setFont(font, font_size)
-
-            # Split part into words and wrap manually
-            words = part.split()
-            for word in words:
+            for word in part.split():
                 word_width = c.stringWidth(word + ' ', font, font_size)
                 if x + word_width > width - x_margin:
                     y -= line_spacing
@@ -191,7 +146,6 @@ def export_to_pdf(text):
         if not line:
             y -= 10
             continue
-
         if line.startswith("[Score & Feedback]"):
             c.setFont(bold_font, font_size)
             c.drawString(x_margin, y, "Score & Feedback:")
@@ -214,15 +168,11 @@ def export_to_pdf(text):
     buffer.seek(0)
     return buffer
 
-# -----------------------------------------------
-# PERPLEXITY LLM INTEGRATION
-# -----------------------------------------------
+# ---------------------------
+# PERPLEXITY API INTEGRATION
+# ---------------------------
 
 def call_perplexity(prompt):
-    """
-    Call Perplexity LLM API with the given prompt.
-    Returns the response as plain text.
-    """
     url = "https://api.perplexity.ai/chat/completions"
     headers = {
         "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
@@ -236,60 +186,43 @@ def call_perplexity(prompt):
     response.raise_for_status()
     return response.json()['choices'][0]['message']['content']
 
-# -----------------------------------------------
-# SKILL EXTRACTION / PARSING
-# -----------------------------------------------
+# ---------------------------
+# SKILL EXTRACTION
+# ---------------------------
 
 def fetch_dynamic_skillset_from_perplexity(job_desc):
-    """
-    Uses LLM to extract up to 50 relevant skills from the job description.
-    Returns a set of normalized skill terms.
-    """
     prompt = (
         "Extract a list of up to 50 relevant technical and soft skills from the following job description. "
-        "Only return a comma-separated list of skill names, no explanations:\n\n"
-        + job_desc
+        "Only return a comma-separated list of skill names, no explanations:\n\n" + job_desc
     )
     skills_raw = call_perplexity(prompt)
     skills = re.split(r',\s*|\n', skills_raw)
     return set(skill.strip().lower() for skill in skills if skill.strip())
 
 def extract_skills(text, skillset):
-    """
-    Extract known skills from resume text using a given skillset.
-    Returns a set of matched skills.
-    """
     doc = nlp(text)
     return set(token.text.lower() for token in doc if token.text.lower() in skillset)
 
-# -----------------------------------------------
-# STRUCTURED SECTION PARSING VIA LLM
-# -----------------------------------------------
+# ---------------------------
+# STRUCTURED SECTION PARSING
+# ---------------------------
 
 def parse_sections_with_llm(resume_text):
-    """
-    Parse unstructured resume text into structured sections using LLM.
-    Supports custom or non-standard section detection.
-    """
     prompt = (
         "You are an expert resume parser. Given the following unstructured resume text, extract and organize it into a clean structured format. "
         "Detect all relevant sections, even if they are not standard (like Certifications, Projects, Publications, Languages, etc). "
         "Return each section with a clear heading like this:\n\n"
         "=== Section Name ===\n"
         "Section content...\n\n"
-        "Make sure the output is complete and readable.\n\n"
         f"Resume:\n{resume_text}"
     )
     return call_perplexity(prompt)
 
-# -----------------------------------------------
+# ---------------------------
 # SECTION SCORING
-# -----------------------------------------------
+# ---------------------------
 
 def score_section_with_llm(section_name, section_content):
-    """
-    Use LLM to score a resume section (1-10) with feedback based on clarity, impact, and relevance.
-    """
     prompt = (
         f"Evaluate the following '{section_name}' section of a resume. "
         "Score it from 1 to 10 based on clarity, impact, and relevance to a typical job description. "
@@ -299,10 +232,6 @@ def score_section_with_llm(section_name, section_content):
     return call_perplexity(prompt)
 
 def score_all_sections(parsed_resume):
-    """
-    Apply scoring to each section in a structured resume.
-    Returns a dictionary of section names to score/feedback.
-    """
     sections = re.findall(r'=== (.*?) ===\n(.*?)(?=(?:===|\Z))', parsed_resume, re.DOTALL)
     section_scores = {}
     for title, content in sections:
@@ -311,25 +240,18 @@ def score_all_sections(parsed_resume):
     return section_scores
 
 def regenerate_section_with_llm(section_name, current_content):
-    """
-    Regenerates a specific section of the resume using the LLM,
-    improving clarity, formatting, and alignment with typical job expectations.
-    """
     prompt = (
         f"You are an expert resume writer. Rewrite the '{section_name}' section below to improve clarity, impact, and alignment with industry best practices. "
         "Keep it concise and relevant. Return only the improved content without section headers or additional commentary.\n\n"
         f"{section_name} Section:\n{current_content}"
     )
     return call_perplexity(prompt)
-# -----------------------------------------------
+
+# ---------------------------
 # RESUME OPTIMIZATION
-# -----------------------------------------------
+# ---------------------------
 
 def optimize_resume(resume_text, job_desc, skillset):
-    """
-    Use LLM to tailor the resume based on the job description and detected skills.
-    Returns optimized text and skill overlap stats.
-    """
     prompt = (
         "You are an expert resume optimizer. Given the following resume and job description, tailor the resume towards the job, "
         "add important missing keywords and skills, and suggest ATS improvements. Highlight additions and changes.\n\n"
