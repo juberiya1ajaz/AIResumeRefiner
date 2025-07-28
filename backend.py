@@ -33,10 +33,18 @@ def get_nlp():
 # Absolute path to the local nltk_data folder
 current_dir = os.path.dirname(os.path.abspath(__file__))
 nltk_data_path = os.path.join(current_dir, "nltk_data")
-
 nltk.data.path.append(nltk_data_path)
-# Call once early in app
 
+# Force download of punkt into custom path
+def setup_nltk_data():
+    import nltk
+    nltk.download("punkt", download_dir=nltk_data_path)
+    nltk.download("stopwords", download_dir=nltk_data_path)
+
+setup_nltk_data()
+
+
+# Call once early in app
 nlp = get_nlp()
 
 # nltk.download('punkt_tab')
