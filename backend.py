@@ -12,13 +12,32 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import simpleSplit
 from io import BytesIO
 import re
-# import os
+import os
 import streamlit as st
 # from dotenv import load_dotenv
 # load_dotenv()
 
 
 # Download necessary NLTK corpora
+@st.cache_resource
+def get_nlp():
+    return spacy.load("en_core_web_sm")
+
+# @st.cache_resource
+# def download_nltk():
+#     nltk.download("punkt")
+#     nltk.download("stopwords")
+
+
+# Tell nltk to look in the local 'nltk_data' directory
+# Absolute path to the local nltk_data folder
+current_dir = os.path.dirname(os.path.abspath(__file__))
+nltk_data_path = os.path.join(current_dir, "nltk_data")
+
+nltk.data.path.append(nltk_data_path)
+# Call once early in app
+
+nlp = get_nlp()
 
 # nltk.download('punkt_tab')
 # nltk.download('stopwords')
