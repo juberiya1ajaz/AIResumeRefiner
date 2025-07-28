@@ -30,16 +30,11 @@ def get_nlp():
 #     nltk.download("stopwords")
 
 
-# Tell nltk to look in the local 'nltk_data' directory
-# Absolute path to the local nltk_data folder
-# Set custom download path
+# Path to local nltk_data
 nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
 nltk.data.path.append(nltk_data_path)
-
-# Re-download clean version of punkt
-nltk.download("punkt", download_dir=nltk_data_path)
-nltk.download("stopwords", download_dir=nltk_data_path)
-
+tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
+    
 
 # Call once early in app
 nlp = get_nlp()
@@ -87,12 +82,6 @@ def extract_keywords(text, top_n=10):
     Tokenize and return top N frequent keywords from given text.
     Filters out stopwords and non-alphabetic tokens.
     """
-    # Make sure nltk uses your local folder
-    nltk_data_path = os.path.join(os.path.dirname(__file__), "nltk_data")
-    nltk.data.path.append(nltk_data_path)
-
-    # Manually load tokenizer to avoid mysterious punkt_tab
-    tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
     words = tokenizer.tokenize(text)
     words = [w.lower() for w in words if w.isalpha() and w.lower() not in stop_words]
     freq_dist = nltk.FreqDist(words)
